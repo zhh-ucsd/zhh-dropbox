@@ -2,175 +2,274 @@
  * Name: Zhiyuan Huang
  * Email: zhh087@ucsd.edu
  * PID: 200336800
- * Sources used: pa2-starter
+ * Sources used: PA3 write-up and starter code, Claude (AI assistant)
  *
- * My implementation of ArrayList.
+ * This file contains MyLinkedList, a generic doubly linked list that uses
+ * sentinel head and tail nodes, along with its inner Node class.
  */
+
+import java.util.AbstractList;
 
 /**
- * A generic, ArrayList that grows its capacity as needed(2x).
- * Implements the abstract MyList interface.
+ * A generic LinkedList that is linked in both directions.
+ * Extends the AbstractList class.
  *
  * Instance variables:
- * data - the array storing the elements
- * size - the length of valid elements
+ * head - the leading sentinel node
+ * tail - the ending sentinel node
+ * size - the number of valid (non-sentinel) nodes
  */
-public class MyArrayList<E> implements MyList<E>{
-    private static final int DEFAULT_CAP_SIZE_VAL = 5;
-    
-    // data
-    int size = 0;
-    Object[] data;
+public class MyLinkedList<E> extends AbstractList<E> {
 
-    // constructors
-    /**
-     * Creates an empty list with the default capacity.
-     */
-    public MyArrayList(){
-        data = new Object[DEFAULT_CAP_SIZE_VAL];
-    }
-    /**
-     * Creates an empty list with the given capacity len.
-     *
-     * @param len the given capacity
-     * @throws IllegalArgumentException if len is strictly smaller than 0
-     */
-    public MyArrayList(int len){
-        if(len<0)
-            throw new IllegalArgumentException("Illegal Argument! Received: "+len);
+    private static final String INDEX_ERROR_MSG = "index out of bounds";
+    private static final String NULL_DATA_MSG = "data is null";
 
-        data = new Object[len];
-    }
+    int size;
+    Node head;
+    Node tail;
+
     /**
-     * Creates a list being a copy of the given Java native array's elements.
+     * A Node class that holds data and references to previous and next Nodes.
      *
-     * @param arr the given array
+     * Instance variables:
+     * data - the data stored in the node
+     * next - the next node this node links to
+     * prev - the previous node this node links to
      */
-    public MyArrayList(E[] arr){
-        if(arr==null){
-            data = new Object[DEFAULT_CAP_SIZE_VAL];
-            return;
+    protected class Node {
+        E data;
+        Node next;
+        Node prev;
+
+        /**
+         * Constructor to create singleton Node
+         * @param element Element to add, can be null
+         */
+        public Node(E element) {
+            // Initialize the instance variables
+            this.data = element;
+            this.next = null;
+            this.prev = null;
         }
-        size = arr.length;
-        data = new Object[size];
-        for(int i = 0;i<size;i++){
-            data[i] = arr[i];
+
+        /**
+         * Set the parameter prev as the previous node
+         * @param prev new previous node
+         */
+        public void setPrev(Node prev) {
+            this.prev = prev;
+        }
+
+        /**
+         * Set the parameter next as the next node
+         * @param next new next node
+         */
+        public void setNext(Node next) {
+            this.next = next;
+        }
+
+        /**
+         * Set the parameter element as the node's data
+         * @param element new element
+         */
+        public void setElement(E element) {
+            this.data = element;
+        }
+
+        /**
+         * Accessor to get the next Node in the list
+         * @return the next node
+         */
+        public Node getNext() {
+            return this.next;
+        }
+
+        /**
+         * Accessor to get the prev Node in the list
+         * @return the previous node
+         */
+        public Node getPrev() {
+            return this.prev;
+        }
+
+        /**
+         * Accessor to get the Nodes Element
+         * @return this node's data
+         */
+        public E getElement() {
+            return this.data;
         }
     }
 
-    // public methods
     /**
-     * Increases the capacity of the underlying array, each step is x2
-     *
-     * @param len the minimum capacity after expanding
-     * @throws IllegalArgumentException if requiredCapacity is less than the current capacity
+     * Creates an empty list whose head and tail sentinels point to
+     * each other.
      */
-    public void expandCapacity (int len){
-        if(len<data.length)
-            throw new IllegalArgumentException("Small Target Capacity! Current: "+data.length+"Target: "+len);
+    public MyLinkedList() {
+        size = 0;
+        head = new Node(null);
+        tail = new Node(null);
+        head.setNext(tail);
+        tail.setPrev(head);
+    }
 
-        int cap = Math.max(data.length == 0 ? DEFAULT_CAP_SIZE_VAL : data.length * 2, len);
+    /**
+     * Finds the node at the given index by walking forward from head.
+     * An index equal to size returns the tail sentinel.
+     *
+     * @param index the position of the node to find
+     * @return the node at that index
+     */
+    protected Node getNth(int index) {
+        Node cur = head.getNext();
+        while (index-- > 0) {
+            cur = cur.getNext();
+        }
+        return cur;
+    }
 
-        Object[] tgt_data = new Object[cap];
-        for(int i = 0;i<size;i++)
-            tgt_data[i]=data[i];
-        data = tgt_data;
-    }
     /**
-     * Returns the number of elements can be hold in current data.
+     * Returns the number of elements in the list.
      *
-     * @return the capacity of the list
+     * @return the number of elements, not counting sentinels
      */
-    public int getCapacity(){
-        return data.length;
+    @Override
+    public int size() {
+        return size;
     }
-    /**
-     * Inserts an element at the given index.
-     *
-     * @param index the index to insert at
-     * @param a the element to insert
-     * @throws IndexOutOfBoundsException if index is invalid
-     *         than size
-     */
-    public void add(int index, E a){
-        if(index<0||index>size)
-            throw new IndexOutOfBoundsException("Illegal Index! Received: "+index);
-        
-        int cap = data.length == size? data.length == 0 ? DEFAULT_CAP_SIZE_VAL : data.length * 2 : data.length;
 
-        Object[] tgt_data = new Object[cap];
-        for(int i = 0;i<index;i++)
-            tgt_data[i] = data[i];
-        tgt_data[index] = a; size++;
-        for(int i = index + 1;i<size;i++)
-            tgt_data[i] = data[i-1];
-        data = tgt_data;
-    }
     /**
-     * Appends an element to the end of the list.
-     *
-     * @param a the element to append
-     */
-    public void append(E a){
-        if(size == data.length)
-            expandCapacity(size+1);
-        data[size++]=a;
-    }
-    /**
-     * Returns the element at the given position.
+     * Returns the element at the given index.
      *
      * @param index the position of the element
-     * @return the element at index
-     * @throws IndexOutOfBoundsException if index is negative or not less than size
+     * @return the element at that index
+     * @throws IndexOutOfBoundsException if index is outside [0, size)
      */
-    public E get(int index){
-        if(index<0||index>=size)
-            throw new IndexOutOfBoundsException("Illegal Index! Received: "+index);
-        return (E)data[index];
+    @Override
+    public E get(int index) {
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException(INDEX_ERROR_MSG);
+        }
+        return getNth(index).getElement();
     }
+
+    /**
+     * Inserts data at the given index, shifting later elements back.
+     *
+     * @param index the position the new element will have
+     * @param data the element to insert
+     * @throws NullPointerException if data is null
+     * @throws IndexOutOfBoundsException if index is outside [0, size]
+     */
+    @Override
+    public void add(int index, E data) {
+        if (data == null) {
+            throw new NullPointerException(NULL_DATA_MSG);
+        }
+        if (index < 0 || index > size) {
+            throw new IndexOutOfBoundsException(INDEX_ERROR_MSG);
+        }
+
+        // Link the new node between cur and the node before it
+        Node cur = getNth(index);
+        Node prev = cur.getPrev();
+        Node newNode = new Node(data);
+        newNode.setPrev(prev);
+        newNode.setNext(cur);
+        prev.setNext(newNode);
+        cur.setPrev(newNode);
+
+        size++;
+    }
+
+    /**
+     * Appends data to the end of the list.
+     *
+     * @param data the element to append
+     * @return true once the element is added
+     * @throws NullPointerException if data is null
+     */
+    @Override
+    public boolean add(E data) {
+        if (data == null) {
+            throw new NullPointerException(NULL_DATA_MSG);
+        }
+
+        // Link the new node between the last node and tail
+        Node prev = tail.getPrev();
+        Node newNode = new Node(data);
+        newNode.setPrev(prev);
+        newNode.setNext(tail);
+        prev.setNext(newNode);
+        tail.setPrev(newNode);
+
+        size++;
+        return true;
+    }
+
     /**
      * Replaces the element at the given index.
      *
-     * @param index the position to replace
-     * @param a the new element
-     * @return the element previously at index
-     * @throws IndexOutOfBoundsException if index is negative or not less than size
+     * @param index the position of the element to replace
+     * @param data the new element
+     * @return the element that was replaced
+     * @throws NullPointerException if data is null
+     * @throws IndexOutOfBoundsException if index is outside [0, size)
      */
-    public E set(int index, E a){
-        if(index<0||index>=size)
-            throw new IndexOutOfBoundsException("Illegal Index! Received: "+index);
-        Object ans= data[index];
-        data[index]=a;
-        return (E)ans;
+    @Override
+    public E set(int index, E data) {
+        if (data == null) {
+            throw new NullPointerException(NULL_DATA_MSG);
+        }
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException(INDEX_ERROR_MSG);
+        }
+
+        Node cur = getNth(index);
+        E oldData = cur.getElement();
+        cur.setElement(data);
+        return oldData;
     }
+
     /**
      * Removes the element at the given index.
      *
      * @param index the position of the element to remove
-     * @return the removed element
-     * @throws IndexOutOfBoundsException if index is negative or not less than size
+     * @return the element that was removed
+     * @throws IndexOutOfBoundsException if index is outside [0, size)
      */
-    public E remove(int index){
-        if(index<0||index>=size)
-            throw new IndexOutOfBoundsException("Illegal Index! Received: "+index);
+    @Override
+    public E remove(int index) {
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException(INDEX_ERROR_MSG);
+        }
 
-        Object ans= data[index];
-        Object[] tgt_data = new Object[data.length];
-        for(int i = 0;i<index;i++)
-            tgt_data[i]=data[i];
+        // Unlink cur by connecting its neighbors to each other
+        Node cur = getNth(index);
+        cur.getPrev().setNext(cur.getNext());
+        cur.getNext().setPrev(cur.getPrev());
+
         size--;
-        for(int i = index;i<size;i++)
-            tgt_data[i]=data[i+1];
-        data=tgt_data;
-
-        return (E)ans;
+        return cur.getElement();
     }
+
     /**
-     * Returns the number of active elements in the list.
-     *
-     * @return the size of the list
+     * Removes every element, leaving only the sentinels.
      */
-    public int size(){
-        return size;
+    @Override
+    public void clear() {
+        head.setNext(tail);
+        tail.setPrev(head);
+        size = 0;
+    }
+
+    /**
+     * Checks whether the list has no elements.
+     *
+     * @return true if the list is empty, false otherwise
+     */
+    @Override
+    public boolean isEmpty() {
+        return size == 0;
     }
 }
